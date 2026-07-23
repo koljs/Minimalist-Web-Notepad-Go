@@ -36,7 +36,7 @@ func main() {
 
 	r.GET("/:path", func(c *gin.Context) {
 		path := c.Param("path")
-		filePath := "./_tmp_/" + path
+		filePath := "./_tmp_/" + path + ".txt"
 
 		// 检查文件是否存在，如果不存在则创建
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -84,7 +84,7 @@ func main() {
 		path := c.Param("path")
 
 		// 定义文件路径
-		filePath := "./_tmp_/" + path
+		filePath := "./_tmp_/" + path + ".txt"
 
 		// 创建文件夹，如果不存在的话
 		dir := "./_tmp_/"
