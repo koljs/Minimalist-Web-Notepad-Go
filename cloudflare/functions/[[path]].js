@@ -72,6 +72,9 @@ export async function onRequest(context) {
       return new Response('Bad Request', { status: 400 });
     }
 
+    // R2 对象名加 .txt 后缀,与 Go 版本本地文件命名(_tmp_/<path>.txt)保持一致
+    const r2Key = key + '.txt';
+
     if (!env[R2_BINDING]) {
       return new Response('R2 binding not configured', { status: 500 });
     }
@@ -79,7 +82,7 @@ export async function onRequest(context) {
 
     // GET /api/<key> → 读取 R2,支持 ETag/304 协商缓存
     if (method === 'GET') {
-      const object = await bucket.get(key);
+      const object = await bucket.get(r2Key);
       if (!object) {
         // 对象不存在,返回空内容(无 ETag,不缓存)
         return new Response('', {
@@ -134,11 +137,11 @@ export async function onRequest(context) {
 
       // 空内容 → 删除对象(与原项目行为一致)
       if (body.length === 0) {
-        await bucket.delete(key);
+        await bucket.delete(r2Key);
         return Response.json({ status: 'Success' });
       }
 
-      await bucket.put(key, body);
+      await bucket.put(r2Key, body);
       return Response.json({ status: 'Success' });
     }
   }

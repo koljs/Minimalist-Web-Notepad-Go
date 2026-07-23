@@ -113,7 +113,7 @@ Minimalist-Web-Notepad-Go/
 │  └────────────────────────────────────────────────────────────┘  │
 │  ┌────────────────────────────────────────────────────────────┐  │
 │  │  存储层（os 标准库）                                       │  │
-│  │   ./_tmp_/<path>  ← 文件名 = URL 路径段                    │  │
+│  │   ./_tmp_/<path>.txt  ← 文件名 = URL 路径段 + .txt 后缀     │  │
 │  │   0755 目录权限 / 0644 文件权限                            │  │
 │  └────────────────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────────────┘
@@ -141,7 +141,7 @@ Minimalist-Web-Notepad-Go/
    os.Stat       │  5. 文件不存在则 MkdirAll + Create
                  ▼
             ┌─────────┐
-            │ 文件系统│ ./_tmp_/<path>
+            │ 文件系统│ ./_tmp_/<path>.txt
             └────┬────┘
    ReadFile      │  6. 读取内容
                  ▼
@@ -202,7 +202,7 @@ Minimalist-Web-Notepad-Go/
 ### 6.3 存储模块（运行时生成）
 
 - **位置**：`./_tmp_/`（相对当前工作目录）
-- **命名**：文件名 = URL `:path` 参数原值，无扩展名
+- **命名**：文件名 = URL `:path` 参数原值 + `.txt` 后缀
 - **生命周期**：首次 GET 时创建空文件；POST 时覆盖写入；内容为空时删除文件
 - **权限**：目录 `0755`，文件 `0644`
 
@@ -262,7 +262,7 @@ Minimalist-Web-Notepad-Go/
 **关键逻辑**：
 
 1. `path := c.Param("path")` —— 取 URL 路径段。
-2. `filePath := "./_tmp_/" + path` —— 拼接文件路径。
+2. `filePath := "./_tmp_/" + path + ".txt"` —— 拼接文件路径。
 3. `os.Stat` 判断文件是否存在：
    - 不存在 → `os.MkdirAll(filepath.Dir(filePath), 0755)` 创建 `_tmp_` 目录 → `os.Create(filePath)` 创建空文件。
    - 任一步失败 → 返回 `500 JSON {"error": ...}`。
@@ -281,7 +281,7 @@ Minimalist-Web-Notepad-Go/
 **关键逻辑**：
 
 1. `io.ReadAll(c.Request.Body)` —— 读取请求体。
-2. `filePath := "./_tmp_/" + path` —— 拼接路径。
+2. `filePath := "./_tmp_/" + path + ".txt"` —— 拼接路径。
 3. 确保 `_tmp_/` 目录存在（`os.Mkdir`，忽略已存在）。
 4. `os.WriteFile(filePath, body, 0644)` —— 写入文件。
 5. **空内容清理**（双保险）：
@@ -537,7 +537,7 @@ go build -o Minimalist-Web-Notepad-Go
 
 - **后端**：本地文件系统，无索引、无元数据。
 - **目录**：`./_tmp_/`（相对工作目录）。
-- **文件名**：URL `:path` 参数的原始字符串（无转义、无扩展名）。
+- **文件名**：URL `:path` 参数的原始字符串 + `.txt` 后缀（无转义）。
 - **文件内容**：纯文本，即用户在 textarea 中的原始字符序列。
 
 ### 12.2 读写时序与一致性
@@ -601,7 +601,7 @@ checkAndUploadContent()
 `GET /:path` 与 `POST /:path` 直接以 `c.Param("path")` 拼接文件路径：
 
 ```go
-filePath := "./_tmp_/" + path
+filePath := "./_tmp_/" + path + ".txt"
 ```
 
 Gin 的 `:path` 单段路由参数 **不含斜杠**（多段需用 `*filepath`），故 `../` 难以通过单段注入。但若未来改为 `*path` 或前置反代未规范化路径，存在目录穿越风险。建议对 `path` 做 `filepath.Base` 清洗。
