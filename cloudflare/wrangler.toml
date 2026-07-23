@@ -1,0 +1,22 @@
+# Cloudflare Pages 配置 - Minimalist Web Notepad
+#
+# 部署方式:
+#   1) 在 Cloudflare Dashboard 创建一个 R2 bucket,名称对应下方 bucket_name
+#   2) cd cloudflare && npx wrangler pages deploy public --project-name minimalist-web-notepad
+#   3) 部署后在 Pages 项目 Settings → Functions → R2 bindings 中
+#      添加绑定:Variable name = NOTEPAD, R2 bucket = minimalist-web-notepad
+#
+# 也可通过 Git 集成:把本目录连接到 GitHub 仓库,在 Pages 中设置:
+#   - Build output directory: public
+#   - Root directory: cloudflare
+#   - Framework preset: None
+
+name = "minimalist-web-notepad"
+compatibility_date = "2024-09-01"
+pages_build_output_dir = "public"
+
+# R2 绑定(也可在 Dashboard 配置,二选一)
+# 注意:Pages 项目的 R2 绑定若用 wrangler.toml 声明,需 wrangler >= 3.45
+[[r2_buckets]]
+binding = "NOTEPAD"
+bucket_name = "minimalist-web-notepad"
