@@ -40,6 +40,19 @@ export async function onRequest(context) {
     return new Response('Method Not Allowed', { status: 405 });
   }
 
+  // 0) 静态资源优先放行:交给 Pages 静态托管(env.ASSETS)
+  //    [[path]].js 是 splat 路由,会拦截所有路径(含 /static/*),
+  //    必须在此显式放行,否则 CSS/JS 会被兜底逻辑返回 index.html 导致样式丢失、脚本不加载
+  if (method === 'GET' && env.ASSETS) {
+    const pathname = url.pathname;
+    const isStaticAsset =
+      pathname.startsWith('/static/') ||           // 静态资源目录
+      /\.(?:css|js|svg|png|jpg|jpeg|gif|ico|woff2?|ttf|map|txt|webmanifest)$/i.test(pathname);
+    if (isStaticAsset) {
+      return env.ASSETS.fetch(request);
+    }
+  }
+
   // 1) GET / → 生成随机串并重定向
   if (url.pathname === '/' && method === 'GET') {
     const random = generateRandomString(RANDOM_LENGTH);
