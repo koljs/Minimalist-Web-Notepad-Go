@@ -66,7 +66,15 @@ Minimalist-Web-Notepad-Go/
 ├── README.md               # 项目说明与运行教程
 ├── LICENSE                 # WTFPL 许可证
 ├── .gitattributes          # Git 文本属性（LF 规范化）
-└── Minimalist-Web-Notepad-PY.zip  # 附带的 Python 版压缩包（参考资料）
+├── Minimalist-Web-Notepad-PY.zip  # 附带的 Python 版压缩包（参考资料）
+├── WIKI.md                 # 本 Code Wiki 文档
+└── cloudflare/             # Cloudflare Pages + Functions + R2 部署版本（独立于 Go 项目）
+    ├── functions/[[path]].js  # Pages Functions：路由 + R2 读写 + 白名单 + ETag + 频率限制
+    ├── public/             # Pages 静态资源根目录
+    │   ├── index.html      # 纯静态 HTML（客户端渲染）
+    │   └── static/         # script.js / styles.css / favicon.svg（含状态提示增强）
+    ├── wrangler.toml       # Cloudflare 配置（R2 绑定）
+    └── DEPLOY.md           # Cloudflare 部署指南
 ```
 
 > 说明：`_tmp_/` 目录在源码中通过 `os.MkdirAll` / `os.Mkdir` 在运行时按需创建，仓库初始不含该目录。
@@ -649,9 +657,11 @@ Gin 的 `html/template` 默认对内容做 HTML 转义，`<textarea>` 内的 `</
 5. **`flag.Parse` 位置**：虽逻辑正确，但建议前置到路由注册前，提升可读性。
 6. **无单元测试**：仓库无 `_test.go`，建议对 `randomString`、文件读写 handler 补充测试。
 7. **无 `.gitignore`**：`_tmp_/` 与编译产物未忽略，建议添加。
-8. **随机源**：建议 `math/rand` → `crypto/rand` 以提升路径不可预测性。
-9. **前端无错误处理**：XHR 建议加 `onerror` 与状态提示。
-10. **`beforeunload` 最终保存**：建议页面卸载时同步发送一次，减少丢字。
+8. **随机源**：建议 `math/rand` → `crypto/rand` 以提升路径不可预测性。✅ 已在 Cloudflare 版本实现（`crypto.getRandomValues`）。
+9. **前端无错误处理**：XHR 建议加 `onerror` 与状态提示。✅ 已在 Cloudflare 版本实现（成功/失败状态提示条）。
+10. **`beforeunload` 最终保存**：建议页面卸载时同步发送一次，减少丢字。✅ 已在 Cloudflare 版本实现（`sendBeacon`）。
+
+> 上述第 8-10 项及额外的路径白名单、ETag/304 缓存、POST 频率限制等增强，均在 `cloudflare/` 目录的 Cloudflare 版本中实现，详见 [cloudflare/DEPLOY.md](file:///workspace/cloudflare/DEPLOY.md)。
 
 ### 15.3 部署建议
 
