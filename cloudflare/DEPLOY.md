@@ -50,7 +50,7 @@
 └───────────────▲─────────────────────────────────────────┘
                 │ R2 Binding(env.NOTEPAD)
 ┌───────────────┴─────────────────────────────────────────┐
-│  Cloudflare R2 Bucket(minimalist-web-notepad)           │
+│  Cloudflare R2 Bucket(notepad)                          │
 │   key = URL 路径段, value = 纯文本内容                  │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -120,10 +120,11 @@ wrangler login
 ### 4.3 创建 R2 bucket
 
 ```bash
-wrangler r2 bucket create minimalist-web-notepad
+wrangler r2 bucket create notepad
 ```
 
 > 若提示 bucket 已存在,可跳过此步。
+> 注意:bucket 名 `notepad` 是独立专用 bucket,不要复用同账号下其他项目(如云盘 `cloud-pan`)的 bucket,否则会被云盘的孤儿清扫功能误删。
 
 ### 4.4 部署 Pages
 
@@ -193,7 +194,7 @@ Dashboard → **Workers & Pages** → 选择你的 Pages 项目 → **Settings**
 | 字段 | 值 |
 |------|-----|
 | Variable name | `NOTEPAD`(必须与代码中 `R2_BINDING` 常量一致) |
-| R2 bucket | 选择 `minimalist-web-notepad` |
+| R2 bucket | 选择 `notepad` |
 
 ### 6.3 保存并重新部署
 
@@ -423,8 +424,8 @@ wrangler login
 # 登录
 npx wrangler login
 
-# 创建 R2 bucket
-npx wrangler r2 bucket create minimalist-web-notepad
+# 创建 R2 bucket (独立专用,勿复用云盘等项目的 bucket)
+npx wrangler r2 bucket create notepad
 
 # 部署 Pages
 cd cloudflare
@@ -437,10 +438,10 @@ npx wrangler pages dev public
 npx wrangler pages project list
 
 # 查看 R2 对象列表
-npx wrangler r2 object list minimalist-web-notepad
+npx wrangler r2 object list notepad
 
 # 删除某个对象
-npx wrangler r2 object delete minimalist-web-notepad/<key>
+npx wrangler r2 object delete notepad/<key>
 ```
 
 ---
