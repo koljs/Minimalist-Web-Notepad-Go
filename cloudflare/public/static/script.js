@@ -81,20 +81,29 @@ function uploadContent(currentContent, showFeedback) {
     request.open('POST', apiPath, true);
     request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
 
-    if (showFeedback) {
-        request.onload = function () {
-            if (request.status === 200) {
-                showStatus('success', '已保存');
-            } else if (request.status === 429) {
-                showStatus('error', '操作过快,请稍候');
-            } else {
-                showStatus('error', '保存失败 (' + request.status + ')');
-            }
-        };
-        request.onerror = function () {
-            showStatus('error', '网络错误,保存失败');
-        };
-    }
+    // 始终绑定 onload/onerror:失败时回滚 content,下次轮询自动重试,避免丢内容
+    // (content 在 checkAndUploadContent 中已乐观更新,此处仅负责失败回滚)
+    request.onload = function () {
+        if (request.status !== 200) {
+            // 保存失败:回滚 content,下次轮询 currentContent !== null 触发重试
+            content = null;
+        }
+        if (!showFeedback) return;
+        if (request.status === 200) {
+            showStatus('success', '已保存');
+        } else if (request.status === 429) {
+            showStatus('error', '操作过快,请稍候');
+        } else if (request.status === 413) {
+            showStatus('error', '内容过大,保存失败');
+        } else {
+            showStatus('error', '保存失败 (' + request.status + ')');
+        }
+    };
+    request.onerror = function () {
+        // 网络错误:回滚 content,下次轮询重试
+        content = null;
+        if (showFeedback) showStatus('error', '网络错误,保存失败');
+    };
 
     request.send(currentContent);
 

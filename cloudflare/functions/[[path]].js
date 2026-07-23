@@ -101,6 +101,13 @@ export async function onRequest(context) {
 
     // POST /api/<key> → 写入或删除 R2(受频率限制)
     if (method === 'POST') {
+      // body 大小预检:防止超大内容耗尽 Function 内存
+      const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10MB,记事本场景足够
+      const contentLength = parseInt(request.headers.get('Content-Length') || '0', 10);
+      if (contentLength > MAX_BODY_SIZE) {
+        return new Response('Payload Too Large', { status: 413 });
+      }
+
       // 频率限制检查(仅限写操作,避免误伤读取)
       const allowed = await checkRateLimit(request);
       if (!allowed) {
@@ -154,13 +161,18 @@ async function checkRateLimit(request) {
   }
   count++;
 
-  // 写回计数(覆盖式,重置 TTL 为 RATE_WINDOW)
+  // 超限:不写回计数,让旧记录按原 TTL 自然过期(60s 后恢复),
+  // 避免持续请求导致 TTL 反复重置、计数只增不减的死锁
+  if (count > RATE_LIMIT) {
+    return false;
+  }
+
+  // 允许:写回计数(重置 TTL 为 RATE_WINDOW)
   const counterResponse = new Response(String(count), {
     headers: { 'Cache-Control': `max-age=${RATE_WINDOW}` },
   });
   await cache.put(cacheKey, counterResponse.clone());
-
-  return count <= RATE_LIMIT;
+  return true;
 }
 
 /**
